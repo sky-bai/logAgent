@@ -17,7 +17,7 @@ func Init(address []string, chanSize int64) (err error) {
 	config.Producer.RequiredAcks = sarama.WaitForAll          // 发送完数据需要leader和follow都确认
 	config.Producer.Partitioner = sarama.NewRandomPartitioner // 新选出一个partition
 	config.Producer.Return.Successes = true                   // 成功交付的消息将在success channel返回
-
+	fmt.Println("address:", address)
 	// 2.连接kafka
 	client, err = sarama.NewSyncProducer(address, config)
 	if err != nil {
@@ -31,7 +31,7 @@ func Init(address []string, chanSize int64) (err error) {
 }
 
 func sendMsg() {
-	fmt.Println("---sendMsg---")
+	fmt.Println("从通道中取消息发送中")
 	for {
 		select {
 		case msg := <-msgChan:

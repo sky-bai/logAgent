@@ -2,9 +2,9 @@ package kafka
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/sirupsen/logrus"
+	"logAgent/es"
 )
 
 func Consumer(addr []string, topic string) (err error) {
@@ -33,7 +33,6 @@ func Consumer(addr []string, topic string) (err error) {
 		go func(sarama.PartitionConsumer) {
 			for msg := range pc.Messages() {
 				logrus.Debugf("Partition:%d, Offset:%d, Key:%s, Value:%s", msg.Partition, msg.Offset, string(msg.Key), string(msg.Value))
-				fmt.Printf("Partition:%d, Offset:%d, Key:%s, Value:%s\n", msg.Partition, msg.Offset, string(msg.Key), string(msg.Value))
 				var m1 map[string]interface{}
 				err := json.Unmarshal(msg.Value, &m1)
 				if err != nil {
@@ -41,7 +40,7 @@ func Consumer(addr []string, topic string) (err error) {
 					continue
 				}
 				// 这里将map的指针传递给es  pass the pointer of map to es to store
-				//es.PutLogDate(m1)
+				es.PutLogDate(m1)
 			}
 		}(pc)
 	}
