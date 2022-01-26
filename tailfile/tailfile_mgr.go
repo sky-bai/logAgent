@@ -51,6 +51,7 @@ func (t *TailFileMgr) Watch() {
 				value.cancel()
 			}
 		}
+
 	}
 }
 
@@ -70,7 +71,7 @@ func (t *TailFileMgr) addConf(conf common.CollectEntry) bool {
 	TtMgr.tailFileMap[conf.Path] = task
 	logrus.Infof("创建tailObj成功 path：%s , topic: %s", conf.Path, conf.Topic)
 	// 3.搜集日志
-	go task.run()
+	go task.run(task.topic)
 
 	return true
 }

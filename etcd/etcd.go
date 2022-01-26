@@ -35,9 +35,10 @@ func Init(address []string) (err error) {
 // GetConf 根据key获取etcd节点下的所有的日志配置项
 func GetConf(key string) (collectEntryList []common.CollectEntry, err error) {
 
+	// 1.根据key获取到etcd中的所有的日志配置项
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	fmt.Println("key:", key)
+	fmt.Println("etcd 放置日志项的 节点:", key)
 	resp, err := client.Get(ctx, key)
 	if err != nil {
 		logrus.Errorf("get from etcd failed, err:%v\n", err)
@@ -47,14 +48,15 @@ func GetConf(key string) (collectEntryList []common.CollectEntry, err error) {
 		logrus.Errorf("get len = 0 from etcd by key:%s\n", key)
 		return
 	}
-
 	ret := resp.Kvs[0].Value
-	fmt.Println(string(ret))
+	fmt.Println("从etcd获取到的日志项配置为", string(ret))
 	err = json.Unmarshal(ret, &collectEntryList)
 	if err != nil {
 		logrus.Errorf("unmarshal failed, err:%v\n", err)
 		return nil, err
 	}
+
+	//  2.监听该节点变化
 	go WatchConf(key)
 	return collectEntryList, nil
 }
@@ -78,8 +80,11 @@ func WatchConf(key string) {
 				}
 				// 2.告诉tailFile对象去管理新的配置项
 				tailfile.SendConfChan(newConf) // tail模块如果没有处理chan里面的内容,这里会一直阻塞
+
 			}
 		}
 
 	}
 }
+
+// etcd 只需要一个在一个节点下存放日志配置项信息，也只需要监听这一个节点的变化

@@ -4,31 +4,10 @@ import (
 	"fmt"
 	"github.com/go-ini/ini"
 	"github.com/sirupsen/logrus"
-	"logAgent/etcd"
-	"logAgent/kafka"
-	"logAgent/tailfile"
+	"logAgent/common"
+	"logAgent/es"
 	"net"
 )
-
-type Config struct {
-	KafkaConfig   `ini:"kafka"`
-	CollectConfig `ini:"collect"`
-	EtcdConfig    `ini:"etcd"`
-}
-
-type KafkaConfig struct {
-	Address  string `ini:"address"`
-	Topic    string `ini:"topic"`
-	ChanSize int64  `ini:"chan_size"`
-}
-type CollectConfig struct {
-	LogFilePath string `ini:"logfile_path"`
-}
-type EtcdConfig struct {
-	Address string `ini:"address"`
-	// 下面这个管理了多个日志文件和对应的topic 在etcd一个节点下面储存日志文件地址和对应的topic
-	CollectKey string `ini:"collect_key"`
-}
 
 func run() (err error) {
 	select {}
@@ -54,50 +33,61 @@ func main() {
 	//}
 
 	// 1. 加载配置文件
-	var configObj = new(Config)
+	var configObj = new(common.Config)
 	err := ini.MapTo(configObj, "./conf/config.ini")
 	if err != nil {
 		logrus.Error("read config file error:%v", err)
 		return
 	}
 
-	// 2. 初始化kafka
-	err = kafka.Init([]string{configObj.KafkaConfig.Address}, configObj.KafkaConfig.ChanSize)
+	fmt.Println("加载配置文件成功")
+
+	//// 2. 初始化kafka
+	//err = kafka.Init([]string{configObj.KafkaConfig.Address}, configObj.KafkaConfig.ChanSize)
+	//if err != nil {
+	//	logrus.Error("kafka init error:%v", err)
+	//	return
+	//}
+	//logrus.Info("kafka 初始化成功")
+	//
+	//// 3. 初始化etcd 连接
+	//err = etcd.Init([]string{configObj.EtcdConfig.Address})
+	//if err != nil {
+	//	logrus.Errorf("etcd init error:%v", err)
+	//	return
+	//}
+	//logrus.Info("etcd 初始化成功")
+	////collectKey := fmt.Sprintf(configObj.EtcdConfig.CollectKey, ip)
+	//
+	//// 4. 从etcd中获取要搜集日志的所有配置项 json格式的字符串
+	//allConf, err := etcd.GetConf(configObj.EtcdConfig.CollectKey)
+	//if err != nil {
+	//	logrus.Errorf("etcd get conf error:%v", err)
+	//	return
+	//}
+	//fmt.Println("初始化获取到的配置:", allConf)
+	//
+	//// 5.监听etcd中的配置项变化
+	//go etcd.WatchConf(configObj.EtcdConfig.CollectKey)
+	//
+	//// 5. 根据全部配置中的日志路径初始化tail tail只能获取一个日志文件地址然后创建一个tail对象
+	//err = tailfile.Init(allConf)
+	//if err != nil {
+	//	logrus.Error("tailfile init error:%v", err)
+	//}
+	//logrus.Info("日志文件tailfile 初始化成功")
+	fmt.Println(configObj.ESConf.Address)
+	// 6.连接ES
+	err = es.Init(configObj.ESConf.Address, configObj.ESConf.Index, configObj.ESConf.GoroutineNum, configObj.ESConf.MaxSize)
 	if err != nil {
-		logrus.Error("kafka init error:%v", err)
+		logrus.Errorf("connect es error: %v", err)
 		return
 	}
-	logrus.Info("kafka init success")
+	fmt.Println("es 初始化成功")
+	select {}
 
-	// 3. 初始化etcd 连接
-	err = etcd.Init([]string{configObj.EtcdConfig.Address})
-	if err != nil {
-		logrus.Errorf("etcd init error:%v", err)
-		return
-	}
-	logrus.Info("etcd init success")
-	//collectKey := fmt.Sprintf(configObj.EtcdConfig.CollectKey, ip)
-
-	// 4. 从etcd中获取要搜集日志的所有配置项 json格式的字符串
-	allConf, err := etcd.GetConf(configObj.EtcdConfig.CollectKey)
-	if err != nil {
-		logrus.Errorf("etcd get conf error:%v", err)
-		return
-	}
-	fmt.Println("初始化获取到的配置:", allConf)
-
-	// 5.监听etcd中的配置项变化
-	go etcd.WatchConf(configObj.EtcdConfig.CollectKey)
-
-	// 5. 根据全部配置中的日志路径初始化tail tail只能获取一个日志文件地址然后创建一个tail对象
-	err = tailfile.Init(allConf)
-	if err != nil {
-		logrus.Error("tailfile init error:%v", err)
-	}
-	logrus.Info("tailfile init success")
-
-	// 6.从kafka里面读取消息
-	go kafka.Consumer([]string{configObj.KafkaConfig.Address}, configObj.KafkaConfig.Topic)
+	//// 6.从kafka里面读取消息
+	//go kafka.Consumer([]string{configObj.KafkaConfig.Address}, configObj.KafkaConfig.Topic)
 
 	// 7.把数据发送给es
 

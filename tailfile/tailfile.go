@@ -16,13 +16,11 @@ import (
 var confChan chan []common.CollectEntry
 
 type tailTask struct {
-	path  string
-	topic string
-	// TailObj 根据这个路径 去管理这个日志文件 它里面管理着这个日志文件的内容 日志文件实例化
-	tailObj *tail.Tail
-	// 每次会启一个协程去读取日志文件的内容 但是有时候需要kill掉这个协程
-	ctx    context.Context
-	cancel context.CancelFunc
+	path    string          // 服务器日志路径
+	topic   string          // 当前日志放在kafka的那个topic下
+	tailObj *tail.Tail      // TailObj 根据这个路径 去管理这个日志文件 它里面管理着这个日志文件的内容 日志文件实例化 对一个日志文件的抽象
+	ctx     context.Context // 每次会启一个协程去读取日志文件的内容 但是有时候需要kill掉这个协程
+	cancel  context.CancelFunc
 }
 
 // newTailTask 创建一个带有path 和 topic 的对象
@@ -43,9 +41,9 @@ func (t *tailTask) Init() (err error) {
 	config := tail.Config{
 		ReOpen:    true, // 日志分割后重新打开
 		Follow:    true,
-		Location:  &tail.SeekInfo{Offset: 0, Whence: 2},
-		MustExist: false,
-		Poll:      true,
+		Location:  &tail.SeekInfo{Offset: 0, Whence: 2}, // 从文件末尾开始读取
+		MustExist: false,                                // 文件不存在不报错
+		Poll:      true,                                 // 轮询的方式
 	}
 	file, err := tail.TailFile(t.path, config)
 	t.tailObj = file
@@ -58,8 +56,8 @@ func (t *tailTask) Init() (err error) {
 }
 
 // run 读取tailObj里面的日志文件的内容 然后向kafka里面发送数据
-func (t *tailTask) run() {
-	logrus.Infof("start tail file:%s", t.path)
+func (t *tailTask) run(topic string) {
+	logrus.Infof("开始读取 file:%s 文件里面的内容 ", t.path)
 	// 读取对象里面的文件然后发给kafka
 
 	select {
@@ -71,7 +69,7 @@ func (t *tailTask) run() {
 		// 循环读数据
 
 		if !ok {
-			logrus.Error("tail file close reopen, filename:%s\n", t.path)
+			logrus.Error("tail file close reopen, filename:%s\n", t.path) //nolint:govet
 			time.Sleep(time.Second)
 		}
 		//strings.Trim(line.Text, "\r")
@@ -81,7 +79,7 @@ func (t *tailTask) run() {
 
 		fmt.Println("这一行的内容", line.Text)
 		msg := &sarama.ProducerMessage{}
-		msg.Topic = "test"
+		msg.Topic = topic
 		msg.Value = sarama.StringEncoder(line.Text)
 		// 将数据放入 chan
 		kafka.GetMsgChan() <- msg
@@ -113,7 +111,7 @@ func Init(allConf []common.CollectEntry) (err error) {
 		TtMgr.tailFileMap[eachLogConf.Path] = task
 		logrus.Infof("创建tailObj成功 path：%s , topic: %s", eachLogConf.Path, eachLogConf.Topic)
 		// 3.搜集日志
-		go task.run()
+		go task.run(eachLogConf.Topic)
 	}
 
 	// 从全局chan里面获取新的配置
@@ -136,3 +134,5 @@ func SendConfChan(newConf []common.CollectEntry) {
 // 问题1 tail从chan里面获取到新的配置后如何管理tailTask
 
 // 将需要管理的数据抽象出一个大的结构体来管理
+
+// 问题2 读取日志是通过协程去读的 当某一日志项不需要读取的时候，需要通过该协程关闭
