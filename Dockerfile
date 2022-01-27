@@ -16,5 +16,4 @@ COPY ./conf ./conf
 RUN go build -o /logAgent
 
 
-
 CMD [ "/logAgent" ]
