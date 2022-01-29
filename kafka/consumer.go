@@ -46,3 +46,5 @@ func Consumer(addr []string, topic string) (err error) {
 	}
 	return
 }
+
+// 根据不同topic放入不同es的index 数据库里面
