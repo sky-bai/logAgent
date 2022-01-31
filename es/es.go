@@ -18,7 +18,8 @@ type ESClient struct {
 var esClient = &ESClient{}
 
 func Init(addr, index string, goroutineNum, maxSize int) (err error) {
-	client, err := elastic.NewClient(elastic.SetURL("http://" + addr))
+	//client, err := elastic.NewClient(elastic.SetURL("http://" + addr))
+	client, err := elastic.NewClient(elastic.SetSniff(false), elastic.SetURL("http://"+addr))
 	if err != nil {
 		logrus.Errorf("es init failed, err:%v", err)
 		return err
@@ -42,7 +43,6 @@ func PutLogDate(msg interface{}) {
 
 func sendToES() {
 	for msg := range esClient.logDataChan {
-
 		put1, err := esClient.client.Index().
 			Index(esClient.index).
 			BodyJson(msg).
