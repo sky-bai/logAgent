@@ -113,11 +113,12 @@ func Init(allConf []common.CollectEntry) (err error) {
 		// 3.搜集日志
 		go task.run(eachLogConf.Topic)
 	}
+	fmt.Println("///")
 
 	// 从全局chan里面获取新的配置
 	//confChan = make(chan []common.CollectEntry)
-	newConf := <-TtMgr.confChan
-	logrus.Infof("收到新的配置: %v", newConf)
+	//newConf := <-TtMgr.confChan
+	//logrus.Infof("收到新的配置: %v", newConf)
 
 	go TtMgr.Watch()
 
