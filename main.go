@@ -72,12 +72,13 @@ func main() {
 
 	// 5.监听etcd中的配置项变化
 	go etcd.WatchConf(configObj.EtcdConfig.CollectKey)
-
+	fmt.Println("===")
 	// 5. 根据全部配置中的日志路径初始化tail tail只能获取一个日志文件地址然后创建一个tail对象
 	err = tailfile.Init(allConf)
 	if err != nil {
 		logrus.Error("tailfile init error:%v", err)
 	}
+	fmt.Println("pp")
 	logrus.Info("日志文件tailfile 初始化成功")
 	fmt.Println(configObj.ESConf.Address)
 	// 6.连接ES
