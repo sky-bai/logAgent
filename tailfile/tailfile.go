@@ -2,7 +2,6 @@ package tailfile
 
 import (
 	"context"
-	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/hpcloud/tail"
 	"github.com/sirupsen/logrus"
@@ -51,7 +50,6 @@ func (t *tailTask) Init() (err error) {
 		logrus.Errorf("tail file failed, err:%v", err)
 		return err
 	}
-
 	return
 }
 
@@ -62,6 +60,7 @@ func (t *tailTask) run(topic string) {
 
 	select {
 	case <-t.ctx.Done():
+		// 这里一直监听退出信息 因为是一直循环从通道里面读取 用return就可以停掉这个协程
 		t.tailObj.Cleanup()
 		logrus.Infof("tail file:%s goroutine exit", t.path)
 		return
@@ -72,12 +71,11 @@ func (t *tailTask) run(topic string) {
 			logrus.Error("tail file close reopen, filename:%s\n", t.path) //nolint:govet
 			time.Sleep(time.Second)
 		}
-		//strings.Trim(line.Text, "\r")
+		//strings.Trim(line.Text, "\r") 这一行出现了空行
 		if len(strings.Trim(line.Text, "\r")) == 0 {
 			logrus.Info("出现空格 跳过")
 		}
 
-		fmt.Println("这一行的内容", line.Text)
 		msg := &sarama.ProducerMessage{}
 		msg.Topic = topic
 		msg.Value = sarama.StringEncoder(line.Text)
@@ -113,7 +111,6 @@ func Init(allConf []common.CollectEntry) (err error) {
 		// 3.搜集日志
 		go task.run(eachLogConf.Topic)
 	}
-	fmt.Println("///")
 
 	// 从全局chan里面获取新的配置
 	//confChan = make(chan []common.CollectEntry)

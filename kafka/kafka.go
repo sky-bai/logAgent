@@ -1,7 +1,6 @@
 package kafka
 
 import (
-	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/sirupsen/logrus"
 )
@@ -17,7 +16,7 @@ func Init(address []string, chanSize int64) (err error) {
 	config.Producer.RequiredAcks = sarama.WaitForAll          // 发送完数据需要leader和follow都确认
 	config.Producer.Partitioner = sarama.NewRandomPartitioner // 新选出一个partition
 	config.Producer.Return.Successes = true                   // 成功交付的消息将在success channel返回
-	fmt.Println("address:", address)
+
 	// 2.连接kafka
 	client, err = sarama.NewSyncProducer(address, config)
 	if err != nil {
@@ -31,11 +30,11 @@ func Init(address []string, chanSize int64) (err error) {
 }
 
 func sendMsg() {
-	fmt.Println("从通道中取消息发送中")
+	logrus.Infof("从通道中取消息发送中")
 	for {
 		select {
 		case msg := <-msgChan:
-			fmt.Println("读数据")
+
 			pid, offset, err := client.SendMessage(msg)
 			if err != nil {
 				logrus.Warning("send message failed,err:%v", err)

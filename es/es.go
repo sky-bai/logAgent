@@ -2,7 +2,6 @@ package es
 
 import (
 	"context"
-	"fmt"
 	"github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 )
@@ -27,7 +26,7 @@ func Init(addr, index string, goroutineNum, maxSize int) (err error) {
 	esClient.client = client
 	esClient.index = index
 	esClient.logDataChan = make(chan interface{}, maxSize)
-	fmt.Println("es init success")
+	logrus.Info("es init success")
 
 	for i := 0; i < goroutineNum; i++ {
 		go sendToES()
@@ -50,7 +49,6 @@ func sendToES() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("往es发送消息成功 Indexed user %s to index %s ,type %s\n", put1.Id, put1.Index, put1.Type)
+		logrus.Infof("往es发送消息成功 Indexed user %s to index %s ,type %s\n", put1.Id, put1.Index, put1.Type)
 	}
-
 }

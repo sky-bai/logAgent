@@ -3,7 +3,6 @@ package etcd
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"go.etcd.io/etcd/client/v3"
 	"logAgent/common"
@@ -26,7 +25,7 @@ func Init(address []string) (err error) {
 		DialTimeout: 5 * time.Second,
 	})
 	if err != nil {
-		fmt.Printf("connect to etcd failed, err:%v\n", err)
+		logrus.Errorf("connect to etcd failed, err:%v\n", err)
 		return
 	}
 	return
@@ -34,11 +33,10 @@ func Init(address []string) (err error) {
 
 // GetConf 根据key获取etcd节点下的所有的日志配置项
 func GetConf(key string) (collectEntryList []common.CollectEntry, err error) {
-
 	// 1.根据key获取到etcd中的所有的日志配置项
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	fmt.Println("etcd 放置日志项的 节点:", key)
+
 	resp, err := client.Get(ctx, key)
 	if err != nil {
 		logrus.Errorf("get from etcd failed, err:%v\n", err)
@@ -49,7 +47,7 @@ func GetConf(key string) (collectEntryList []common.CollectEntry, err error) {
 		return
 	}
 	ret := resp.Kvs[0].Value
-	fmt.Println("从etcd获取到的日志项配置为", string(ret))
+	logrus.Info("从etcd获取到的日志项配置为", string(ret))
 	err = json.Unmarshal(ret, &collectEntryList)
 	if err != nil {
 		logrus.Errorf("unmarshal failed, err:%v\n", err)
@@ -65,13 +63,12 @@ func GetConf(key string) (collectEntryList []common.CollectEntry, err error) {
 func WatchConf(key string) {
 	for {
 		watchChan := client.Watch(context.Background(), key)
-
 		var newConf []common.CollectEntry // 监听获取到信息到新的
 		// watchChan records all response for key
 		// response records events
 		for value := range watchChan {
 			for i, i2 := range value.Events {
-				fmt.Printf("%d, 变更该节点的操作为%s操作, %s, %s\n", i, i2.Type, i2.Kv.Key, i2.Kv.Value)
+				logrus.Infof("%d, 变更该节点的操作为%s操作, %s, %s\n", i, i2.Type, i2.Kv.Key, i2.Kv.Value)
 				// 1.获取到新的配置项
 				err := json.Unmarshal(i2.Kv.Value, &newConf)
 				if err != nil {
