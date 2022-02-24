@@ -85,12 +85,12 @@ func main() {
 	//}
 	//logrus.Info("es 初始化成功")
 	//
-	//// 6.从kafka里面读取消息
-	//err = kafka.Consumer([]string{configObj.KafkaConfig.Address}, "configObj.KafkaConfig.Topic")
-	//if err != nil {
-	//	logrus.Errorf("从kafka里面读取消息 error: %v", err)
-	//	return
-	//}
+	// 6.从kafka里面读取消息
+	err = kafka.Consumer([]string{configObj.KafkaConfig.Address}, "configObj.KafkaConfig.Topic")
+	if err != nil {
+		logrus.Errorf("从kafka里面读取消息 error: %v", err)
+		return
+	}
 
 	// 7.把数据发送给es
 	run()
