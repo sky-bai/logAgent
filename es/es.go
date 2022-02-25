@@ -37,7 +37,9 @@ func Init(addr, index string, goroutineNum, maxSize int) (err error) {
 
 // PutLogDate 通过方法将外部数据放入内部结构体私有变量中
 func PutLogDate(msg interface{}) {
+	logrus.Info("es put log data")
 	esClient.logDataChan <- msg
+	logrus.Info("es put log data success")
 
 }
 

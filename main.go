@@ -81,7 +81,7 @@ func main() {
 	logrus.Info("日志文件tailfile 初始化成功")
 
 	// 7.从kafka里面读取消息
-	err = kafka.Consumer([]string{configObj.KafkaConfig.Address}, "configObj.KafkaConfig.Topic")
+	err = kafka.Consumer([]string{configObj.KafkaConfig.Address}, configObj.KafkaConfig.Topic)
 	if err != nil {
 		logrus.Errorf("从kafka里面读取消息 error: %v", err)
 		return
