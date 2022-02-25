@@ -45,6 +45,7 @@ func PutLogDate(msg interface{}) {
 
 func sendToES() {
 	for msg := range esClient.logDataChan {
+		logrus.Info("es send to es------", msg)
 		put1, err := esClient.client.Index().
 			Index(esClient.index).
 			BodyJson(msg).

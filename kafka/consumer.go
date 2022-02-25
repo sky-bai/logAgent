@@ -40,7 +40,7 @@ func Consumer(addr []string, topic string) (err error) {
 					continue
 				}
 				// 这里将map的指针传递给es  pass the pointer of map to es to store
-				es.PutLogDate(m1)
+				es.PutLogDate(string(msg.Value))
 			}
 		}(pc)
 	}

@@ -21,6 +21,7 @@ func (t *TailFileMgr) Watch() {
 
 		// 如果原来有的任务，我就不动了，如果新增我就增加
 		for _, value := range newConf {
+			logrus.Infof("新的配置信息 value:%v", value)
 			// 1.如果原来有就不动了
 			if t.confIsExist(value) {
 				continue

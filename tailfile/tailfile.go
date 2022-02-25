@@ -58,29 +58,32 @@ func (t *tailTask) run(topic string) {
 	logrus.Infof("开始读取 file:%s 文件里面的内容 ", t.path)
 	// 读取对象里面的文件然后发给kafka
 
-	select {
-	case <-t.ctx.Done():
-		// 这里一直监听退出信息 因为是一直循环从通道里面读取 用return就可以停掉这个协程
-		t.tailObj.Cleanup()
-		logrus.Infof("tail file:%s goroutine exit", t.path)
-		return
-	case line, ok := <-t.tailObj.Lines:
-		// 循环读数据
+	for {
+		select {
+		case <-t.ctx.Done():
+			// 这里一直监听退出信息 因为是一直循环从通道里面读取 用return就可以停掉这个协程
+			t.tailObj.Cleanup()
+			logrus.Infof("tail file:%s goroutine exit", t.path)
+			return
+		case line, ok := <-t.tailObj.Lines:
+			// 循环读数据
 
-		if !ok {
-			logrus.Error("tail file close reopen, filename:%s\n", t.path) //nolint:govet
-			time.Sleep(time.Second)
-		}
-		//strings.Trim(line.Text, "\r") 这一行出现了空行
-		if len(strings.Trim(line.Text, "\r")) == 0 {
-			logrus.Info("出现空格 跳过")
-		}
+			if !ok {
+				logrus.Error("tail file close reopen, filename:%s\n", t.path) //nolint:govet
+				time.Sleep(time.Second)
+			}
+			//strings.Trim(line.Text, "\r") 这一行出现了空行
+			if len(strings.Trim(line.Text, "\r")) == 0 {
+				logrus.Info("出现空格 跳过")
+			}
 
-		msg := &sarama.ProducerMessage{}
-		msg.Topic = topic
-		msg.Value = sarama.StringEncoder(line.Text)
-		// 将数据放入 chan
-		kafka.GetMsgChan() <- msg
+			msg := &sarama.ProducerMessage{}
+			msg.Topic = topic
+			msg.Value = sarama.StringEncoder(line.Text)
+			// 将数据放入 chan
+			kafka.GetMsgChan() <- msg
+			logrus.Infof("新的配置文件读取到了信息 file:%s, msg:%s", t.path, line.Text)
+		}
 	}
 
 }
