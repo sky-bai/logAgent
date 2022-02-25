@@ -72,7 +72,7 @@ func main() {
 	// 5.监听etcd中的配置项变化
 	go etcd.WatchConf(configObj.EtcdConfig.CollectKey)
 
-	// 5. 根据全部配置中的日志路径初始化tail tail只能获取一个日志文件地址然后创建一个tail对象
+	// 6. 根据全部配置中的日志路径初始化tail tail只能获取一个日志文件地址然后创建一个tail对象
 	err = tailfile.Init(allConf)
 	if err != nil {
 		logrus.Error("tailfile init error:%v", err)
@@ -80,21 +80,21 @@ func main() {
 
 	logrus.Info("日志文件tailfile 初始化成功")
 
-	// 6.连接ES
-	err = es.Init(configObj.ESConf.Address, configObj.ESConf.Index, configObj.ESConf.GoroutineNum, configObj.ESConf.MaxSize)
-	if err != nil {
-		logrus.Errorf("connect es error: %v", err)
-		return
-	}
-	logrus.Info("es 初始化成功")
-
-	// 6.从kafka里面读取消息
+	// 7.从kafka里面读取消息
 	err = kafka.Consumer([]string{configObj.KafkaConfig.Address}, "configObj.KafkaConfig.Topic")
 	if err != nil {
 		logrus.Errorf("从kafka里面读取消息 error: %v", err)
 		return
 	}
 	logrus.Info("从kafka里面读取消息成功")
+
+	// 8.连接ES
+	err = es.Init(configObj.ESConf.Address, configObj.ESConf.Index, configObj.ESConf.GoroutineNum, configObj.ESConf.MaxSize)
+	if err != nil {
+		logrus.Errorf("connect es error: %v", err)
+		return
+	}
+	logrus.Info("es 初始化成功")
 	// 7.把数据发送给es
 	run()
 }
