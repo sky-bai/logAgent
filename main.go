@@ -91,7 +91,7 @@ func main() {
 		logrus.Errorf("从kafka里面读取消息 error: %v", err)
 		return
 	}
-
+	logrus.Info("从kafka里面读取消息成功")
 	// 7.把数据发送给es
 	run()
 }
