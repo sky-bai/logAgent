@@ -18,6 +18,7 @@ var esClient = &ESClient{}
 
 func Init(addr, index string, goroutineNum, maxSize int) (err error) {
 	//client, err := elastic.NewClient(elastic.SetURL("http://" + addr))
+	logrus.Info("es addr:", "http://"+addr)
 	client, err := elastic.NewClient(elastic.SetSniff(false), elastic.SetURL("http://"+addr))
 	if err != nil {
 		logrus.Errorf("es init failed, err:%v", err)
